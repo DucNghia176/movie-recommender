@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hệ thống gợi ý phim</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+
+  <body>
+    <main class="container">
+      <header>
+        <h1>Hệ thống gợi ý phim</h1>
+        <p>Kết hợp Collaborative Filtering + Matrix Factorization (SVD-like)</p>
+      </header>
+
+      <!-- INPUT PANEL -->
+      <section class="panel">
+        <form method="post">
+          <label for="user_id">Mã người dùng (User ID)</label>
+
+          <div class="input-wrapper">
+            <input
+              type="number"
+              id="user_id"
+              name="user_id"
+              value="{{ default_user }}"
+              required
+              autocomplete="off"
+            />
+            <div id="user_suggestions" class="suggest-box"></div>
+          </div>
+          
+          <label for="algorithm">Thuật toán</label>
+          <select id="algorithm" name="algorithm">
+            <option value="user_cf" {% if selected_algorithm == 'user_cf' %}selected{% endif %}>
+              Gợi ý dựa trên người dùng (User-Based CF)
+            </option>
+
+            <option value="item_cf" {% if selected_algorithm == 'item_cf' %}selected{% endif %}>
+              Gợi ý dựa trên sản phẩm (Item-Based CF)
+            </option>
+
+            <option value="svd" {% if selected_algorithm == 'svd' %}selected{% endif %}>
+              Phân rã ma trận (Matrix Factorization)
+            </option>
+
+            <option value="hybrid" {% if selected_algorithm == 'hybrid' %}selected{% endif %}>
+              Kết hợp (Hybrid)
+            </option>
+          </select>
+
+          <button type="submit">Tạo danh sách gợi ý</button>
+        </form>
+
+        {% if not ready %}
+        <div class="alert alert-warning">
+          Vui lòng đặt <code>movies.csv</code> và <code>ratings.csv</code> trong thư mục
+          <code>data/raw</code> rồi tải lại trang để kích hoạt hệ thống gợi ý.
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+      </section>
+
+      <!-- RECOMMENDATION RESULTS -->
+      <section class="panel">
+        <h2>Danh sách phim được gợi ý</h2>
+
+        {% if recommendations %}
+        <ul class="recommendations">
+          {% for rec in recommendations %}
+          <li>
+            <div class="score">{{ rec.score | round(2) }}</div>
+            <div>
+              <p class="title">
+                {% if rec.metadata %}
+                  {{ rec.metadata.title }}
+                {% else %}
+                  Phim ID: {{ rec.movieId }}
+                {% endif %}
+              </p>
+              <p class="movie-id">Mã phim (Movie ID): {{ rec.movieId }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="placeholder">
+          Nhập User ID và nhấn nút bên trên để xem danh sách phim được hệ thống gợi ý.
+        </p>
+        {% endif %}
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

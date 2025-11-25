@@ -1,0 +1,43 @@
+# ========== Python ==========
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# ========== Data ==========
+# Không push dữ liệu nặng Kaggle lên GitHub
+data/raw/*.csv
+data/processed/*.csv
+
+# Nếu muốn push file khác thì xóa dòng này
+data/raw/
+data/processed/
+
+# ========== VSCode ==========
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
+
+# ========== Flask ==========
+instance/
+*.db
+
+# ========== OS temp ==========
+.DS_Store
+Thumbs.db
+
+# ========== Cache ==========
+.cache/
+.ipynb_checkpoints/
