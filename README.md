@@ -9,38 +9,6 @@ Dự án xây dựng hệ thống **gợi ý phim** sử dụng thuật toán:
 
 ---
 
-## 📁 Cấu trúc thư mục
-
-movie-recommender/
-│
-├── data/
-│   ├── raw/
-│   │   ├── movies.csv
-│   │   └── ratings.csv
-│   └── processed/
-│       ├── movies_processed.csv
-│       └── ratings_processed.csv
-│
-├── src/
-│   ├── collaborative_filtering.py
-│   ├── data_preprocessing.py
-│   ├── hybrid_model.py
-│   ├── matrix_factorization.py
-│   └── __init__.py
-│
-├── web_app/
-│   ├── app.py
-│   ├── utils.py
-│   ├── static/
-│   │   ├── css/style.css
-│   │   └── js/main.js
-│   └── templates/index.html
-│
-├── config.py
-├── requirements.txt
-└── README.md
-
-
 ## 🚀 **1. Cài đặt môi trường**
 
 ### Bước 1 — Tạo môi trường ảo
