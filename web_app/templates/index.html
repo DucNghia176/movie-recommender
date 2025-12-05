@@ -8,6 +8,10 @@
   </head>
 
   <body>
+    <div id="loading_overlay" class="loading-overlay" aria-hidden="true">
+      <div class="spinner"></div>
+      <p>Đang tải gợi ý...</p>
+    </div>
     <main class="container">
       <header>
         <h1>Hệ thống gợi ý phim</h1>
@@ -31,53 +35,79 @@
             <div id="user_suggestions" class="suggest-box"></div>
           </div>
           
-          <label for="algorithm">Thuật toán</label>
+          <label for="algorithm">Thuật toán A</label>
           <select id="algorithm" name="algorithm">
             <option value="user_cf" {% if selected_algorithm == 'user_cf' %}selected{% endif %}>
-              Gợi ý dựa trên người dùng (User-Based CF)
+              User-Based CF
             </option>
-
             <option value="item_cf" {% if selected_algorithm == 'item_cf' %}selected{% endif %}>
-              Gợi ý dựa trên sản phẩm (Item-Based CF)
+              Item-Based CF
             </option>
-
             <option value="svd" {% if selected_algorithm == 'svd' %}selected{% endif %}>
-              Phân rã ma trận (Matrix Factorization)
+              Matrix Factorization
             </option>
-
             <option value="hybrid" {% if selected_algorithm == 'hybrid' %}selected{% endif %}>
-              Kết hợp (Hybrid)
+              Hybrid
             </option>
           </select>
 
+          <label class="checkbox-inline">
+            <input type="checkbox" id="compare_toggle" />
+            So sánh 2 thuật toán
+          </label>
+
+          <label id="algorithm_b_label" style="display:none">
+            Thuật toán B
+            <select id="algorithm_b">
+              <option value="user_cf">User-Based CF</option>
+              <option value="item_cf">Item-Based CF</option>
+              <option value="svd">Matrix Factorization</option>
+              <option value="hybrid" selected>Hybrid</option>
+            </select>
+          </label>
+
+          <input type="hidden" name="page" value="1" />
           <button type="submit">Tạo danh sách gợi ý</button>
         </form>
 
         {% if not ready %}
         <div class="alert alert-warning">
-          Vui lòng đặt <code>movies.csv</code> và <code>ratings.csv</code> trong thư mục
-          <code>data/raw</code> rồi tải lại trang để kích hoạt hệ thống gợi ý.
+          Vui lòng đặt <code>movies.csv</code> và <code>ratings.csv</code> trong thư mục <code>data/raw</code> rồi tải lại trang.
         </div>
         {% endif %}
 
         {% if error %}
         <div class="alert alert-error">{{ error }}</div>
         {% endif %}
+        <div id="error_box" class="alert alert-error" style="display:none"></div>
       </section>
 
       <!-- RECOMMENDATION RESULTS -->
       <section class="panel">
         <h2>Danh sách phim được gợi ý</h2>
+        <div class="search-bar">
+          <label for="search_input">Tìm kiếm phim</label>
+          <input
+            type="text"
+            id="search_input"
+            name="search"
+            placeholder="Nhập tên phim hoặc mã phim để lọc..."
+            autocomplete="off"
+            value="{{ search_query }}"
+          />
+        </div>
 
-        {% if recommendations %}
-        <ul class="recommendations">
+        <ul class="recommendations" id="recommendations_list">
+          {% if recommendations %}
           {% for rec in recommendations %}
           <li>
             <div class="score">{{ rec.score | round(2) }}</div>
             <div>
               <p class="title">
-                {% if rec.metadata %}
+                {% if rec.metadata and rec.metadata.title %}
                   {{ rec.metadata.title }}
+                {% elif rec.title %}
+                  {{ rec.title }}
                 {% else %}
                   Phim ID: {{ rec.movieId }}
                 {% endif %}
@@ -86,12 +116,30 @@
             </div>
           </li>
           {% endfor %}
+          {% endif %}
         </ul>
-        {% else %}
-        <p class="placeholder">
-          Nhập User ID và nhấn nút bên trên để xem danh sách phim được hệ thống gợi ý.
+        <p class="placeholder" id="placeholder_text" {% if recommendations %}style="display:none"{% endif %}>
+          Nhập User ID và nhấn nút bên trên để xem danh sách gợi ý.
         </p>
-        {% endif %}
+
+        <div class="pagination" id="pagination_box" {% if total_pages <= 1 %}style="display:none"{% endif %}>
+          <span id="page_info">Trang {{ page }} / {{ total_pages }} ({{ total_results }} kết quả)</span>
+          <div class="page-actions">
+            <button type="button" class="page-btn" data-page="{{ page - 1 }}" {% if page <=1 %}disabled{% endif %}>
+              Trang trước
+            </button>
+            <button type="button" class="page-btn" data-page="{{ page + 1 }}" {% if page >= total_pages %}disabled{% endif %}>
+              Trang sau
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPARE RESULTS -->
+      <section class="panel" id="compare_section" style="display:none">
+        <h2>So sánh hai thuật toán</h2>
+        <p class="sub" id="compare_summary"></p>
+        <div id="compare_table" class="compare-table"></div>
       </section>
     </main>
 

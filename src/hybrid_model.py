@@ -20,7 +20,7 @@ class HybridRecommender:
             if self.user_cf is not None:
                 try:
                     cf_score = self.user_cf.predict(userId, movieId)
-                except:
+                except Exception:
                     cf_score = 0
             else:
                 cf_score = 0
@@ -34,7 +34,9 @@ class HybridRecommender:
             scores.append((movieId, final))
 
         # Sắp xếp theo điểm
-        scores = sorted(scores, key=lambda x: x[1], reverse=True)[:top_n]
+        scores = sorted(scores, key=lambda x: x[1], reverse=True)
+        if top_n is not None:
+            scores = scores[:top_n]
 
         # Build output
         results = []
@@ -44,7 +46,7 @@ class HybridRecommender:
                 "movieId": movieId,
                 "title": row["title"],
                 "score": float(score),
-                "metadata": {"title": row["title"]}
+                "metadata": {"title": row["title"]},
             })
 
         return results

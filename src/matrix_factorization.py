@@ -3,13 +3,12 @@ from dataclasses import dataclass, field
 from config import ModelConfig, model_config
 
 
-
 @dataclass
 class MFRecommender:
     cfg: ModelConfig = field(default_factory=lambda: model_config)
 
     def fit(self, ratings):
-        # Chuẩn hóa rating (tránh overflow khi nhân nhiều)
+        # Normalize ratings to avoid overflow during training
         ratings = ratings.copy()
         ratings["rating"] = ratings["rating"].astype(float)
         ratings["rating"] /= ratings["rating"].max()
@@ -21,13 +20,17 @@ class MFRecommender:
         n_users = users.max() + 1
         n_items = items.max() + 1
 
-        # Ma trận latent factors
+        # Latent factors matrices
         self.P = np.random.normal(scale=0.1, size=(n_users, self.cfg.latent_factors))
         self.Q = np.random.normal(scale=0.1, size=(n_items, self.cfg.latent_factors))
 
+        print(
+            f"[MF] Start training: users={n_users}, items={n_items}, "
+            f"factors={self.cfg.latent_factors}, epochs={self.cfg.epochs}"
+        )
         lr = self.cfg.learning_rate
         reg = self.cfg.reg
-        batch = 8192  # Mini-batch size (tối ưu nhất)
+        batch = 8192  # mini-batch size
 
         for epoch in range(self.cfg.epochs):
             idx = np.random.permutation(len(rates))
@@ -40,22 +43,18 @@ class MFRecommender:
                 i = items[batch_idx]
                 r = rates[batch_idx]
 
-                # Predict vectorized
                 preds = np.sum(self.P[u] * self.Q[i], axis=1)
-
-                # error
                 err = r - preds
 
-                # gradient descent vectorized
                 dP = (err[:, None] * self.Q[i]) - reg * self.P[u]
                 dQ = (err[:, None] * self.P[u]) - reg * self.Q[i]
 
-                # update
                 self.P[u] += lr * dP
                 self.Q[i] += lr * dQ
 
             print(f"[MF] Epoch {epoch+1}/{self.cfg.epochs} done")
 
+        print("[MF] Training completed")
         return self
 
     def predict(self, userId, itemId):
@@ -71,18 +70,20 @@ class MFRecommender:
                 score = self.predict(userId, m)
                 scores.append((m, score))
 
-        scores = sorted(scores, key=lambda x: x[1], reverse=True)[:top_n]
+        scores = sorted(scores, key=lambda x: x[1], reverse=True)
+        if top_n is not None:
+            scores = scores[:top_n]
 
         output = []
         for mid, sc in scores:
-            meta = movies[movies["movieId"] == mid]
-            title = meta.iloc[0]["title"] if len(meta) else None
+            meta = movies[movies["movieId"] == mid] if movies is not None else None
+            title = meta.iloc[0]["title"] if meta is not None and len(meta) else None
 
             output.append({
                 "movieId": mid,
                 "score": float(sc),
                 "title": title,
-                "metadata": {"title": title},
+                "metadata": {"title": title} if title else None,
             })
 
         return output

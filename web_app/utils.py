@@ -12,9 +12,10 @@ from functools import lru_cache
 import pandas as pd
 
 from config import web_config
+from src.collaborative_filtering import ItemBasedCF, UserBasedCF
 from src.data_preprocessing import preprocess_pipeline
-from src.matrix_factorization import MFRecommender
 from src.hybrid_model import HybridRecommender
+from src.matrix_factorization import MFRecommender
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class RecommenderBundle:
     movies: pd.DataFrame
     ratings: pd.DataFrame
-    user_cf: object     # bỏ kiểu cứng UserBasedCF để tránh lỗi
+    user_cf: object     # không ép kiểu cứng để tránh lỗi import vòng lặp
     item_cf: object
     svd: MFRecommender
     hybrid: HybridRecommender
@@ -36,19 +37,21 @@ def _prepare():
         logger.warning("Dataset missing: %s", exc)
         return None
 
-    # ====== CF QUÁ NẶNG → TẮT ĐỂ TRÁNH CRASH ======
     user_cf = None
     item_cf = None
+    try:
+        user_cf = UserBasedCF().fit(ratings)
+        item_cf = ItemBasedCF().fit(ratings)
+    except Exception as exc:
+        logger.warning("CF initialization failed: %s", exc)
 
-    # ====== MF chạy tốt trên 300k dòng ======
     mf = MFRecommender().fit(ratings)
 
-    # ====== Hybrid (chỉ MF vì CF = None) ======
     hybrid = HybridRecommender(
         user_cf=user_cf,
         mf=mf,
-        w_cf=0.0,   # tắt CF hoàn toàn
-        w_mf=1.0
+        w_cf=0.5 if user_cf is not None else 0.0,
+        w_mf=0.5 if user_cf is not None else 1.0,
     )
 
     return RecommenderBundle(
@@ -67,4 +70,7 @@ def get_recommender_bundle():
 
 
 def candidate_items(bundle: RecommenderBundle, limit=500):
-    return bundle.movies["movieId"].tolist()[:limit]
+    items = bundle.movies["movieId"].tolist()
+    if limit is None:
+        return items
+    return items[:limit]
