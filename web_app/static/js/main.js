@@ -5,12 +5,12 @@ const debounce = (fn, delay = 300) => {
     t = setTimeout(() => fn(...args), delay);
   };
 };
+let cachedUsers = [];
 
 document.addEventListener("DOMContentLoaded", () => {
   // Autocomplete user
   const userInput = document.getElementById("user_id");
   const suggestBox = document.getElementById("user_suggestions");
-  let cachedUsers = [];
 
   fetch("/api/users")
     .then((res) => res.json())
@@ -260,14 +260,24 @@ document.addEventListener("DOMContentLoaded", () => {
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      state.userId = document.getElementById("user_id")?.value || "";
+
+      const userVal = document.getElementById("user_id")?.value || "";
+
+      if (!cachedUsers.includes(Number(userVal))) {
+        showToast("❌ Người dùng không tồn tại trong dữ liệu!");
+        return;
+      }
+
+      state.userId = userVal;
       state.algA = algorithmSelect?.value || "hybrid";
       state.algB = algorithmBSelect?.value || "hybrid";
       state.search = searchInput?.value?.trim() || "";
       state.compare = compareToggle?.checked || false;
+
       loadPage(1);
     });
   }
+
 
   if (paginationBox) {
     paginationBox.addEventListener("click", (e) => {
@@ -311,3 +321,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+//show toast message
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
