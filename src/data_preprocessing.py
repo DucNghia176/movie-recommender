@@ -2,16 +2,18 @@
 import pandas as pd
 from config import data_config, model_config
 
-MAX_RATINGS = 200_000
+MAX_RATINGS = 1_000_000
 
 def load_datasets(cfg=data_config):
     movies = pd.read_csv(cfg.movies_file)
     ratings = pd.read_csv(cfg.ratings_file)
-
-    # ⚡ GIẢM BỚT DỮ LIỆU RATING VỀ 1 TRIỆU DÒNG (RẤT QUAN TRỌNG)
+    
     if len(ratings) > MAX_RATINGS:
-        ratings = ratings.sample(MAX_RATINGS, random_state=42)
+        user1_rows = ratings[ratings["userId"] == 1]
 
+        ratings = ratings.sample(MAX_RATINGS, random_state=42)
+        
+        ratings = pd.concat([ratings, user1_rows]).drop_duplicates()
     return movies, ratings
 
 
